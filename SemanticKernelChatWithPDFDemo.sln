@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 25.0.1705.4
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernelChatWithPDFDemo", "SemanticKernelChatWithPDFDemo\SemanticKernelChatWithPDFDemo.csproj", "{2A816663-ED02-499C-8D2C-D9B99D81A931}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2A816663-ED02-499C-8D2C-D9B99D81A931}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A816663-ED02-499C-8D2C-D9B99D81A931}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A816663-ED02-499C-8D2C-D9B99D81A931}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A816663-ED02-499C-8D2C-D9B99D81A931}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {862A8FBA-5547-4E17-9932-B03291E06D9B}
+	EndGlobalSection
+EndGlobal
