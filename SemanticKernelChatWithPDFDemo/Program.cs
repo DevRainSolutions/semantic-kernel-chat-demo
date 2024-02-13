@@ -1,11 +1,9 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.AI.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.AI.OpenAI.ChatCompletion;
-using Microsoft.SemanticKernel.CoreSkills;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Memory;
-using Microsoft.SemanticKernel.Orchestration;
+using Microsoft.SemanticKernel.Plugins.Memory;
 using Microsoft.SemanticKernel.Text;
 
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
@@ -23,14 +21,15 @@ var configBuilder = new ConfigurationBuilder()
 var embeddingOptions = configBuilder.GetSection("Embedding").Get<AzureOpenAIOptions>();
 var completionOptions = configBuilder.GetSection("Completion").Get<AzureOpenAIOptions>();
 
-var kernel = Kernel.Builder
-    .WithAzureTextEmbeddingGenerationService(embeddingOptions.DeploymentId, embeddingOptions.Endpoint,
-        embeddingOptions.Key)
-    .WithAzureChatCompletionService(completionOptions.DeploymentId, completionOptions.Endpoint, completionOptions.Key)
-    .WithMemoryStorage(new VolatileMemoryStore())
+var kernel = Kernel.CreateBuilder()
+    .AddAzureOpenAIChatCompletion(completionOptions.DeploymentId, completionOptions.Endpoint, completionOptions.Key)
     .Build();
 
-
+var memoryBuilder = new MemoryBuilder();
+memoryBuilder.WithAzureOpenAITextEmbeddingGeneration(embeddingOptions.DeploymentId, embeddingOptions.Endpoint,
+        embeddingOptions.Key);
+memoryBuilder.WithMemoryStore(new VolatileMemoryStore());
+var memory = memoryBuilder.Build();
 
 //Parse PDF files and initialize SK memory
 var pdfFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.pdf");
@@ -61,39 +60,22 @@ foreach (var pdfFileName in pdfFiles)
         {
             var id = pdfFileName + pdfPage.Number + paragraphs.IndexOf(paragraph);
 
-            await kernel.Memory.SaveInformationAsync(memoryCollectionName, paragraph, id);
+            await memory.SaveInformationAsync(memoryCollectionName, paragraph, id);
         }
 
 
     }
 }
 
-
-kernel.ImportSkill(new TextMemorySkill(), nameof(TextMemorySkill));
+kernel.ImportPluginFromObject(new TextMemoryPlugin(memory), nameof(TextMemoryPlugin));
 
 //Ask SK
 var query = "How is the work by \"R.C. Merkle\" used in this paper?";
 
 var promptTemplate = await File.ReadAllTextAsync("prompt.txt");
 
-kernel.CreateSemanticFunction(promptTemplate,
-    "Query",
-    "QuerySkill",
-    maxTokens: 2048);
-    
-    
-var contextVariables = new ContextVariables(query);
+kernel.CreateFunctionFromPrompt(promptTemplate, functionName: "QuerySkill");
 
-contextVariables.Set("collection", memoryCollectionName);
+var result = await kernel.InvokeAsync(kernel.Plugins.GetFunction(nameof(TextMemoryPlugin), "QuerySkill"), new KernelArguments { { "input", query } });
 
-var result = await kernel.RunAsync(contextVariables, kernel.Skills.GetFunction("QuerySkill", "Query"));
-
-if (result.ErrorOccurred)
-{
-    Console.WriteLine($"Error: {result.LastErrorDescription}");
-}
-else
-{
-    Console.WriteLine(result.Result);
-}
-
+Console.WriteLine(result.GetValue<string>());
